@@ -10,6 +10,7 @@
     "consistency": "node scripts/consistency-check.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.108.2",
     "html-to-image": "^1.11.13",
     "next": "16.2.9",
