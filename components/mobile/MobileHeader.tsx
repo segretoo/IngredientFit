@@ -5,8 +5,14 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import MobileDrawer from "./MobileDrawer";
+import type { AuthUser } from "@/lib/auth/getUser";
 
-export default function MobileHeader() {
+interface Props {
+  // app/mobile/layout.tsx(서버 컴포넌트)에서 lib/auth/getUser로 읽어서 내려줌
+  user?: AuthUser | null;
+}
+
+export default function MobileHeader({ user = null }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
   // /mobile 홈(랜딩)에서만 히어로 위 투명 모드.
@@ -70,7 +76,7 @@ export default function MobileHeader() {
       {/* fixed 헤더가 문서 흐름에서 빠지는 만큼 같은 높이 빈 공간 넣고
           히어로 쪽 음수 마진으로 상쇄. 웹이랑 같은 패턴 */}
       {transparentOverHero && <div className="h-[65px]" aria-hidden />}
-      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} user={user} />
     </>
   );
 }

@@ -3,12 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import AuthMenu from "@/components/auth/AuthMenu";
+import type { AuthUser } from "@/lib/auth/getUser";
 
 interface Props {
   // 랜딩 히어로 위에 얹히는 모드. 스크롤 전엔 투명+흰 글자,
   // 히어로 벗어나면 흰 배경 헤더로 전환.
   // 다른 페이지는 이 prop 없이 항상 흰 배경 고정 헤더
   transparentOverHero?: boolean;
+  // 서버 컴포넌트 페이지에서 lib/auth/getUser로 읽어서 내려주는 로그인 사용자 정보.
+  // Header 자체는 스크롤 로직 때문에 클라이언트 컴포넌트라 세션을 직접 못 읽음
+  user?: AuthUser | null;
 }
 
 const LINKS = [
@@ -20,7 +25,7 @@ const LINKS = [
   { href: "/faq", label: "FAQ" },
 ];
 
-export default function Header({ transparentOverHero = false }: Props) {
+export default function Header({ transparentOverHero = false, user = null }: Props) {
   const [scrolled, setScrolled] = useState(!transparentOverHero);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -80,6 +85,10 @@ export default function Header({ transparentOverHero = false }: Props) {
                 {link.label}
               </Link>
             ))}
+            <span
+              className={`h-4 w-px ${floating ? "bg-white/30" : "bg-[var(--color-border)]"}`}
+              aria-hidden
+            />
             <Link
               href="/chat"
               className={`rounded-lg border-[1.5px] px-3.5 py-[7px] text-[12.5px] font-semibold transition-colors ${
@@ -90,6 +99,7 @@ export default function Header({ transparentOverHero = false }: Props) {
             >
               AI 추천받기
             </Link>
+            <AuthMenu user={user} floating={floating} />
           </nav>
 
           {/* md 미만(좁은 창, 태블릿 폭)에선 햄버거로 대체 */}
@@ -128,6 +138,9 @@ export default function Header({ transparentOverHero = false }: Props) {
             >
               AI 추천받기
             </Link>
+            <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+              <AuthMenu user={user} variant="inline" />
+            </div>
           </nav>
         )}
       </header>

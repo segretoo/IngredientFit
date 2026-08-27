@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import { getUser } from '@/lib/auth/getUser';
 import Footer from '@/components/Footer';
 import AnimateOnScroll from '@/components/AnimateOnScroll';
 import CountUp from '@/components/CountUp';
@@ -33,10 +34,12 @@ const concerns = [
 
 const goodPoints = ['전성분 배치 순서 기반', '용량 대비 가격 비교', '가성비 지수 산출', 'AI 대화형 추천'];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+    const user = await getUser();
+
     return (
         <main className="min-h-screen bg-white">
-            <Header transparentOverHero />
+            <Header transparentOverHero user={user} />
 
             {/* Hero: 메인 보라색 배경 + 흰 글자로 임팩트 */}
             <section className="relative -mt-[65px] overflow-hidden bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)]">

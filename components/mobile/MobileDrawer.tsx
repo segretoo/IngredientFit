@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import AuthMenu from "@/components/auth/AuthMenu";
+import type { AuthUser } from "@/lib/auth/getUser";
 
 const LINKS = [
   { href: "/mobile", label: "홈" },
@@ -17,9 +19,10 @@ const LINKS = [
 interface Props {
   open: boolean;
   onClose: () => void;
+  user?: AuthUser | null;
 }
 
-export default function MobileDrawer({ open, onClose }: Props) {
+export default function MobileDrawer({ open, onClose, user = null }: Props) {
   if (!open) return null;
 
   return (
@@ -39,6 +42,9 @@ export default function MobileDrawer({ open, onClose }: Props) {
           >
             ✕
           </button>
+        </div>
+        <div className="border-b border-[var(--color-border)] px-5 py-3.5">
+          <AuthMenu user={user} variant="inline" />
         </div>
         <ul className="py-2">
           {LINKS.map((link) => (
