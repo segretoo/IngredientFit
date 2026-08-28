@@ -106,13 +106,21 @@ export default function AuthMenu({ user, floating = false, variant = "icon" }: P
           </span>
           <span className="truncate text-[13px] text-[var(--color-ink)]">{user.email}</span>
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="shrink-0 text-[12.5px] text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] transition-colors"
-        >
-          로그아웃
-        </button>
+        <div className="flex shrink-0 items-center gap-3">
+          <Link
+            href="/mypage"
+            className="text-[12.5px] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] transition-colors"
+          >
+            마이페이지
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="text-[12.5px] text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] transition-colors"
+          >
+            로그아웃
+          </button>
+        </div>
       </div>
     );
   }
@@ -138,6 +146,13 @@ export default function AuthMenu({ user, floating = false, variant = "icon" }: P
           <p className="truncate px-4 py-1.5 text-[12px] text-[var(--color-ink-faint)]">
             {user.email ?? "회원"}
           </p>
+          <Link
+            href="/mypage"
+            onClick={() => setOpen(false)}
+            className="block w-full px-4 py-2 text-left text-[13px] text-[var(--color-ink)] hover:bg-gray-50 transition-colors"
+          >
+            마이페이지
+          </Link>
           <button
             type="button"
             onClick={handleLogout}

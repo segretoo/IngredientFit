@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import MobileDrawer from "./MobileDrawer";
+import { useFavoritesLoginSync } from "@/lib/useFavoritesLoginSync";
 import type { AuthUser } from "@/lib/auth/getUser";
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function MobileHeader({ user = null }: Props) {
+  useFavoritesLoginSync(user);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
   // /mobile 홈(랜딩)에서만 히어로 위 투명 모드.
