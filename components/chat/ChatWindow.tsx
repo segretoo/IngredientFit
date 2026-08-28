@@ -26,6 +26,8 @@ import ResultCarousel from './ResultCarousel';
 import MobileActionFabs from './MobileActionFabs';
 import UtilityToolbar from './UtilityToolbar';
 import ContactModal from '@/components/ContactModal';
+import type { AuthUser } from '@/lib/auth/getUser';
+import { addFavorite, removeFavorite } from '@/app/actions/favorites';
 
 const MAX_COMPARE_ITEMS = 4;
 
@@ -76,9 +78,12 @@ interface ChatWindowProps {
     // 진짜 뷰포트 너비로 판단돼서 2단 레이아웃이 좁은 컨테이너에서 찌그러짐.
     // true 주면 뷰포트 크기 상관없이 항상 1단으로 쌓음
     forceStacked?: boolean;
+    // 부모(서버 컴포넌트)가 lib/auth/getUser로 읽어서 내려줌.
+    // 로그인 상태면 즐겨찾기 토글 시 DB(favorites 테이블)에도 동기화함
+    user?: AuthUser | null;
 }
 
-export default function ChatWindow({ forceStacked = false }: ChatWindowProps) {
+export default function ChatWindow({ forceStacked = false, user = null }: ChatWindowProps) {
     const [messages, setMessages, hydrated] = useLocalStorage<ChatMessage[]>('ingredientfit:messages', initialMessages);
     const [conditions, setConditions] = useLocalStorage<SelectedConditions>(
         'ingredientfit:conditions',
@@ -475,11 +480,19 @@ export default function ChatWindow({ forceStacked = false }: ChatWindowProps) {
     }
 
     function handleToggleFavorite(product: ScoredProduct, ingredientName: string, categoryLabel: string) {
+        const alreadyFavorited = favoriteItems.some((item) => item.id === product.id);
         setFavoriteItems((prev) => {
             const exists = prev.some((item) => item.id === product.id);
             if (exists) return prev.filter((item) => item.id !== product.id);
             return [...prev, { id: product.id, product, ingredientName, categoryLabel, addedAt: Date.now() }];
         });
+
+        // 화면(로컬 상태)은 위에서 이미 반영됨. 로그인 상태면 DB에도 반영 시도 —
+        // 여기서 실패해도 사용자 액션은 막지 않고 콘솔에만 남김
+        if (user) {
+            const syncPromise = alreadyFavorited ? removeFavorite(product.id) : addFavorite(product.id);
+            syncPromise.catch((err) => console.error('[favorites] 동기화 실패:', err));
+        }
     }
 
     function handleRemoveFromFavorites(id: string) {
