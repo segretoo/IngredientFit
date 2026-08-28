@@ -5,6 +5,7 @@ import { getFavorites } from "@/lib/favorites";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MyPageFavorites from "./MyPageFavorites";
+import MyPageSkinProfile from "./MyPageSkinProfile";
 
 export const metadata: Metadata = {
   title: "마이페이지 | 성분핏",
@@ -26,7 +27,8 @@ export default async function MyPage() {
         <h1 className="text-[22px] font-bold text-[var(--color-ink)]">마이페이지</h1>
         <p className="mt-1.5 text-[13px] text-[var(--color-ink-faint)]">{user.email}</p>
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-10">
+          <MyPageSkinProfile />
           <MyPageFavorites favorites={favorites} />
         </div>
       </section>
