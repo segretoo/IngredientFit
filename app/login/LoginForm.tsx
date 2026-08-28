@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Button from "@/components/ui/Button";
@@ -67,6 +68,14 @@ export default function LoginForm({ redirectTo }: Props) {
               className="rounded-xl border border-[var(--color-border)] px-3.5 py-2.5 text-[13.5px] outline-none transition-colors focus:border-[var(--color-primary)]"
             />
             <PasswordInput value={password} onChange={setPassword} autoComplete="current-password" />
+            <div className="-mt-1 text-right">
+              <Link
+                href="/forgot-password"
+                className="text-[12px] text-[var(--color-ink-faint)] hover:text-[var(--color-primary)] transition-colors"
+              >
+                비밀번호를 잊으셨나요?
+              </Link>
+            </div>
             {error && <p className="text-[12.5px] text-red-500">{error}</p>}
             <Button type="submit" disabled={loading} className="mt-1 w-full">
               {loading ? "로그인 중..." : "로그인"}
