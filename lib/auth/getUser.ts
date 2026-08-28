@@ -3,6 +3,11 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 export interface AuthUser {
   id: string;
   email: string | null;
+  // user_metadata.nickname. 설정 안 했으면 null — 호출부가 이메일 앞부분 등으로 폴백
+  nickname: string | null;
+  // identities에 'email' provider가 있는지 여부.
+  // 카카오로만 가입한 계정은 비밀번호 자체가 없어서 "비밀번호 변경" UI를 숨겨야 함
+  hasPassword: boolean;
 }
 
 /**
@@ -23,8 +28,15 @@ export async function getUser(): Promise<AuthUser | null> {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;
 
+  const rawNickname = data.user.user_metadata?.nickname;
+  const nickname = typeof rawNickname === "string" && rawNickname.trim() ? rawNickname.trim() : null;
+
+  const hasPassword = (data.user.identities ?? []).some((identity) => identity.provider === "email");
+
   return {
     id: data.user.id,
     email: data.user.email ?? null,
+    nickname,
+    hasPassword,
   };
 }
