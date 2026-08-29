@@ -92,10 +92,9 @@ export default function AuthMenu({ user, floating = false, variant = "icon" }: P
   }
 
   // ── 로그인 상태 ────────────────────────────────────────
-  // 닉네임 대신 이메일 앞글자를 아바타로 우선 표시.
-  // 카카오 프로필 닉네임은 마이페이지(skin_profiles) 작업할 때
-  // user_metadata에서 가져오도록 확장 예정
-  const initial = (user.email?.[0] ?? "회").toUpperCase();
+  // 닉네임 설정했으면 그걸, 안 했으면 이메일 앞부분으로 폴백
+  const displayName = user.nickname ?? user.email?.split("@")[0] ?? "회원";
+  const initial = displayName[0]?.toUpperCase() ?? "회";
 
   if (variant === "inline") {
     return (
@@ -104,7 +103,7 @@ export default function AuthMenu({ user, floating = false, variant = "icon" }: P
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-soft)] text-[12px] font-semibold text-[var(--color-primary)]">
             {initial}
           </span>
-          <span className="truncate text-[13px] text-[var(--color-ink)]">{user.email}</span>
+          <span className="truncate text-[13px] text-[var(--color-ink)]">{displayName}</span>
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <Link
@@ -144,7 +143,7 @@ export default function AuthMenu({ user, floating = false, variant = "icon" }: P
       {open && (
         <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 rounded-xl border border-[var(--color-border)] bg-white py-2 shadow-lg">
           <p className="truncate px-4 py-1.5 text-[12px] text-[var(--color-ink-faint)]">
-            {user.email ?? "회원"}
+            {displayName}
           </p>
           <Link
             href="/mypage"

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { removeFavorite } from "@/app/actions/favorites";
+import MyPageSectionCard from "@/components/mypage/MyPageSectionCard";
 import type { FavoriteProduct } from "@/lib/favorites";
 
 interface Props {
@@ -25,17 +26,13 @@ export default function MyPageFavorites({ favorites }: Props) {
   };
 
   return (
-    <div>
-      <h2 className="text-[15px] font-semibold text-[var(--color-ink)]">
-        즐겨찾기 ({favorites.length})
-      </h2>
-
+    <MyPageSectionCard title={`즐겨찾기 (${favorites.length})`}>
       {favorites.length === 0 ? (
-        <p className="mt-4 rounded-xl bg-[var(--color-primary-soft)]/40 px-4 py-8 text-center text-[13px] text-[var(--color-ink-faint)]">
+        <p className="rounded-xl bg-[var(--color-primary-soft)]/40 px-4 py-8 text-center text-[13px] text-[var(--color-ink-faint)]">
           아직 즐겨찾기한 제품이 없어요. 채팅에서 추천받은 제품의 ☆ 버튼을 눌러 저장해보세요.
         </p>
       ) : (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {favorites.map((product) => {
             const pricePerMl = Math.round(product.price / product.volumeMl);
             const isRemoving = isPending && removingId === product.id;
@@ -84,6 +81,6 @@ export default function MyPageFavorites({ favorites }: Props) {
           })}
         </div>
       )}
-    </div>
+    </MyPageSectionCard>
   );
 }

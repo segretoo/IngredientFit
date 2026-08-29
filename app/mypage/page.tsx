@@ -4,8 +4,9 @@ import { getUser } from "@/lib/auth/getUser";
 import { getFavorites } from "@/lib/favorites";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import MyPageFavorites from "./MyPageFavorites";
+import MyPageProfileCard from "./MyPageProfileCard";
 import MyPageSkinProfile from "./MyPageSkinProfile";
+import MyPageFavorites from "./MyPageFavorites";
 
 export const metadata: Metadata = {
   title: "마이페이지 | 성분핏",
@@ -25,10 +26,14 @@ export default async function MyPage() {
       <Header user={user} />
       <section className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">
         <h1 className="text-[22px] font-bold text-[var(--color-ink)]">마이페이지</h1>
-        <p className="mt-1.5 text-[13px] text-[var(--color-ink-faint)]">{user.email}</p>
 
-        <div className="mt-8 space-y-10">
-          <MyPageSkinProfile />
+        <div className="mt-8 space-y-6">
+          {/* 프로필 + 피부 타입: 둘 다 "내 정보" 성격이라 나란히 배치 */}
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
+            <MyPageProfileCard user={user} />
+            <MyPageSkinProfile />
+          </div>
+
           <MyPageFavorites favorites={favorites} />
         </div>
       </section>
