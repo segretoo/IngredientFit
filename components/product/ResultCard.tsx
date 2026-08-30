@@ -96,7 +96,7 @@ export default function ResultCard({
                                 aria-label={isFavorite ? '즐겨찾기 해제' : '즐겨찾기에 담기'}
                                 aria-pressed={isFavorite}
                                 className={`shrink-0 text-[16px] leading-none transition-colors ${
-                                    isFavorite ? 'text-amber-400' : 'text-[var(--color-ink-faint)] hover:text-amber-400'
+                                    isFavorite ? 'text-[var(--color-accent-text)]' : 'text-[var(--color-ink-faint)] hover:text-[var(--color-accent-text)]'
                                 }`}>
                                 {isFavorite ? '★' : '☆'}
                             </button>
