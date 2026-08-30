@@ -27,7 +27,7 @@ export default function ResultUIShowcase() {
               <span className="inline-block rounded-full bg-[var(--color-primary-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-primary)]">
                 추천 1위
               </span>
-              <span className="shrink-0 text-[16px] leading-none text-amber-400">★</span>
+              <span className="shrink-0 text-[16px] leading-none text-[var(--color-accent-text)]">★</span>
             </div>
             <p className="mt-1 truncate text-[13.5px] font-semibold text-[var(--color-ink)]">
               바이옴 퓨어 비타민 세럼
