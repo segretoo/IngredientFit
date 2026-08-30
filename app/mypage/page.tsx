@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/getUser";
 import { getFavorites } from "@/lib/favorites";
+import { getRecommendationHistory } from "@/lib/recommendationHistory";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MyPageProfileCard from "./MyPageProfileCard";
 import MyPageSkinProfile from "./MyPageSkinProfile";
 import MyPageFavorites from "./MyPageFavorites";
+import MyPageRecommendationHistory from "./MyPageRecommendationHistory";
 
 export const metadata: Metadata = {
   title: "마이페이지 | 성분핏",
@@ -19,7 +21,10 @@ export default async function MyPage() {
     redirect("/login?redirect=/mypage");
   }
 
-  const favorites = await getFavorites();
+  const [favorites, recommendationHistory] = await Promise.all([
+    getFavorites(),
+    getRecommendationHistory(),
+  ]);
 
   return (
     <main className="flex min-h-screen flex-col bg-white">
@@ -35,6 +40,7 @@ export default async function MyPage() {
           </div>
 
           <MyPageFavorites favorites={favorites} />
+          <MyPageRecommendationHistory history={recommendationHistory} />
         </div>
       </section>
       <Footer />
