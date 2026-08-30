@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { categories, getCategory, getIngredientInCategory } from '@/lib/ingredients';
 import { budgetOptions, getBudget, parseBudgetText } from '@/lib/budgets';
 import { useLocalStorage } from '@/lib/useLocalStorage';
-import type { SkinProfile } from '@/lib/skinProfile';
+import { skinTypeLabel, type SkinProfile } from '@/lib/skinProfile';
 import type {
     ChatMessage,
     SelectedConditions,
@@ -28,6 +28,8 @@ import UtilityToolbar from './UtilityToolbar';
 import ContactModal from '@/components/ContactModal';
 import type { AuthUser } from '@/lib/auth/getUser';
 import { addFavorite, removeFavorite } from '@/app/actions/favorites';
+import { saveRecommendation } from '@/app/actions/recommendationHistory';
+import { consumeCameFromOutsideChat } from '@/lib/chatNavigationTracker';
 
 const MAX_COMPARE_ITEMS = 4;
 
@@ -90,6 +92,17 @@ export default function ChatWindow({ forceStacked = false, user = null }: ChatWi
         initialConditions,
     );
     const [isTyping, setIsTyping] = useState(false);
+
+    // 다른 페이지 갔다가 채팅으로 돌아온 경우 처음부터 다시 시작.
+    // 새로고침(F5)했을 땐 previousPathname이 없어서(모듈 변수라 메모리 초기화됨)
+    // 여기 안 걸리고 기존 대화가 그대로 유지됨 — 의도한 차이
+    useEffect(() => {
+        if (consumeCameFromOutsideChat()) {
+            setConditions(initialConditions);
+            setMessages(initialMessages);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
     const [showScoreExplainer, setShowScoreExplainer] = useState(false);
     const [showCompareModal, setShowCompareModal] = useState(false);
     const [showFavoritesModal, setShowFavoritesModal] = useState(false);
@@ -304,6 +317,7 @@ export default function ChatWindow({ forceStacked = false, user = null }: ChatWi
 
         const ingredientId = conditions.ingredientId!;
         const categoryKey = conditions.categoryKey!;
+        const category = getCategory(categoryKey);
 
         try {
             const res = await fetch('/api/recommend', {
@@ -330,6 +344,18 @@ export default function ChatWindow({ forceStacked = false, user = null }: ChatWi
                     createdAt: Date.now(),
                 },
             ]);
+
+            // 로그인 상태면 이 추천도 기록으로 남김. 채팅 흐름을 막지 않게 fire-and-forget
+            if (user && results.length > 0) {
+                const ingredient = getIngredientInCategory(categoryKey, ingredientId);
+                saveRecommendation({
+                    categoryLabel: category.label,
+                    ingredientName: ingredient?.name ?? '',
+                    budgetLabel: budget.label,
+                    skinType: skinProfile ? skinTypeLabel(skinProfile) : null,
+                    results,
+                }).catch((err) => console.error('[recommendationHistory] 저장 실패:', err));
+            }
         } catch {
             pushAiText('추천 계산 중 문제가 생겼어요. 예산을 다시 선택해 주시겠어요?');
         } finally {

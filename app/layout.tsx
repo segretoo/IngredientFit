@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import PathTracker from "@/components/PathTracker";
 
 export const metadata: Metadata = {
   title: "성분핏 | IngredientFit",
@@ -26,6 +27,7 @@ export default function RootLayout({
           body에 속성(cz-shortcut-listen 등)을 주입해서 하이드레이션 경고 뜨는 거
           막음. 이 속성 하나만 억제하고 자식 컴포넌트의 진짜 하이드레이션 오류는 그대로 잡힘 */}
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <PathTracker />
         {children}
       </body>
     </html>
