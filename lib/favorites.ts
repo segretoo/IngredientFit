@@ -33,6 +33,23 @@ const SELECT = `
 `;
 
 /**
+ * 로그인한 사용자가 즐겨찾기한 product_id 목록만 가볍게 가져옴.
+ * /products처럼 제품 상세 정보 없이 "이미 즐겨찾기했는지" 여부만 필요한 화면용 —
+ * getFavorites()처럼 products 테이블과 조인 안 해서 더 가벼움
+ */
+export async function getFavoriteProductIds(): Promise<string[]> {
+  const supabase = await getSupabaseServerClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.from("favorites").select("product_id");
+  if (error || !data) {
+    console.error("[favorites] ID 목록 조회 실패:", error?.message);
+    return [];
+  }
+  return data.map((row) => row.product_id as string);
+}
+
+/**
  * 로그인한 사용자의 즐겨찾기 목록을 제품 정보와 함께 가져옴 (최신 추가순).
  * RLS(auth.uid() = user_id)가 자동으로 "내 것만" 필터링해주므로
  * 별도 user_id 조건을 안 걸어도 됨 — 로그인 안 했으면 빈 배열 반환

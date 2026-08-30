@@ -9,9 +9,19 @@ interface Props {
     product: Product | null;
     isBestValue?: boolean;
     onClose: () => void;
+    // 즐겨찾기 표시/토글. products/page.tsx 쪽에서 로그인 여부까지 확인한
+    // 핸들러를 그대로 내려받아 씀 — 이 컴포넌트는 상태를 직접 안 가짐
+    isFavorite?: boolean;
+    onToggleFavorite?: () => void;
 }
 
-export default function ProductDetailModal({ product, isBestValue = false, onClose }: Props) {
+export default function ProductDetailModal({
+    product,
+    isBestValue = false,
+    onClose,
+    isFavorite = false,
+    onToggleFavorite,
+}: Props) {
     if (!product) return null;
 
     const ingredient = getIngredient(product.ingredientId);
@@ -23,12 +33,27 @@ export default function ProductDetailModal({ product, isBestValue = false, onClo
             <div
                 onClick={(e) => e.stopPropagation()}
                 className="animate-fade-up flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
-                {/* 더미 제품이라 실사진 없음. 파스텔 배경(imageColor) + 공용 세럼 아이콘 플레이스홀더 */}
+                {/* 더미 제품이라 실사진 없음. 파스텔 배경(imageColor) + 공용 세럼 아이콘 플레이스홀더.
+                    닫기 버튼을 여기 얹어서 "모달 전체를 닫는다"는 역할을 시각적으로 최상단에 둠 —
+                    반투명 흰 배경 원을 깔아서 제품마다 다른 파스텔 색 위에서도 항상 잘 보이게 함 */}
                 <div
-                    className="flex h-40 w-full shrink-0 items-center justify-center"
-                    style={{ backgroundColor: product.imageColor }}
-                    aria-hidden>
-                    <Image src="/images/serum-placeholder.png" alt="" width={72} height={72} className="opacity-80" />
+                    className="relative flex h-40 w-full shrink-0 items-center justify-center"
+                    style={{ backgroundColor: product.imageColor }}>
+                    <Image
+                        src="/images/serum-placeholder.png"
+                        alt=""
+                        width={72}
+                        height={72}
+                        className="opacity-80"
+                        aria-hidden
+                    />
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="닫기"
+                        className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/70 text-[15px] leading-none text-[var(--color-ink-soft)] backdrop-blur-sm transition-colors hover:bg-white hover:text-[var(--color-ink)]">
+                        ✕
+                    </button>
                 </div>
                 <div className="flex items-start justify-between px-6 pt-5">
                     <div>
@@ -51,13 +76,20 @@ export default function ProductDetailModal({ product, isBestValue = false, onClo
                             {product.brand} {product.name}
                         </h2>
                     </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        aria-label="닫기"
-                        className="shrink-0 text-[18px] leading-none text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] transition-colors">
-                        ✕
-                    </button>
+                    {onToggleFavorite && (
+                        <button
+                            type="button"
+                            onClick={onToggleFavorite}
+                            aria-label={isFavorite ? '즐겨찾기 해제' : '즐겨찾기에 담기'}
+                            aria-pressed={isFavorite}
+                            className={`shrink-0 text-[19px] leading-none transition-colors ${
+                                isFavorite
+                                    ? 'text-[var(--color-primary)]'
+                                    : 'text-[var(--color-ink-faint)] hover:text-[var(--color-primary)]'
+                            }`}>
+                            {isFavorite ? '★' : '☆'}
+                        </button>
+                    )}
                 </div>
 
                 <div className="overflow-y-auto px-6 pb-6 pt-4">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { categories, getAllUniqueIngredients, getCategory, getIngredient } from '@/lib/ingredients';
@@ -10,6 +11,8 @@ import ArrowRightIcon from '@/components/ArrowRightIcon';
 import RequestProductModal from '@/components/RequestProductModal';
 import IngredientTag from '@/components/IngredientTag';
 import { getIngredientColor } from '@/lib/ingredientVisual';
+import { addFavorite, removeFavorite } from '@/app/actions/favorites';
+import type { AuthUser } from '@/lib/auth/getUser';
 
 const PAGE_SIZE = 12; // 3열 x 4행 (모바일에선 1열 x 12행)
 
@@ -52,9 +55,13 @@ interface Props {
     // 부모 서버 컴포넌트(app/products/page.tsx)가 getAllProducts()로 조회해서 props로 내려줌.
     // "use client" 유지하면서 최신 Supabase 데이터 쓰려고 이렇게 함
     products: Product[];
+    // 로그인 상태(비로그인이면 별 눌러도 /login으로 보냄) + 이미 즐겨찾기한 product_id 목록(초기값)
+    user?: AuthUser | null;
+    favoriteIds?: string[];
 }
 
-export default function ProductsContent({ compact = false, products }: Props) {
+export default function ProductsContent({ compact = false, products, user = null, favoriteIds = [] }: Props) {
+    const router = useRouter();
     const [query, setQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
     const [filterIngredient, setFilterIngredient] = useState<string>('all');
@@ -62,6 +69,37 @@ export default function ProductsContent({ compact = false, products }: Props) {
     const [page, setPage] = useState(1);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [showRequestModal, setShowRequestModal] = useState(false);
+    const [favoriteIdSet, setFavoriteIdSet] = useState<Set<string>>(() => new Set(favoriteIds));
+
+    // 즐겨찾기 여부와 무관하게 카드 자체의 클릭(상세 모달 열기) 동작은 그대로 유지하면서
+    // 별 버튼만 별도로 토글되게 함(이벤트 버블링 막음). 비로그인이면 로그인 페이지로 유도 —
+    // 여기 즐겨찾기는 채팅(로컬 폴백 있음)과 달리 계정 저장 전용이라 로그인 필수
+    function handleToggleFavorite(productId: string) {
+        if (!user) {
+            router.push('/login?redirect=/products');
+            return;
+        }
+
+        const alreadyFavorited = favoriteIdSet.has(productId);
+        setFavoriteIdSet((prev) => {
+            const next = new Set(prev);
+            if (alreadyFavorited) next.delete(productId);
+            else next.add(productId);
+            return next;
+        });
+
+        const action = alreadyFavorited ? removeFavorite(productId) : addFavorite(productId);
+        action.catch((err) => {
+            console.error('[favorites] 동기화 실패:', err);
+            // 실패했으면 화면 표시를 원래대로 되돌림
+            setFavoriteIdSet((prev) => {
+                const next = new Set(prev);
+                if (alreadyFavorited) next.add(productId);
+                else next.delete(productId);
+                return next;
+            });
+        });
+    }
 
     const availableIngredients =
         filterCategory === 'all' ? getAllUniqueIngredients() : getCategory(filterCategory).ingredients;
@@ -235,16 +273,36 @@ export default function ProductsContent({ compact = false, products }: Props) {
                             const isBestValue = bestValueIds.has(p.id);
                             const accentColor = getIngredientColor(p.ingredientId);
                             return (
-                                <button
+                                <div
                                     key={p.id}
-                                    type="button"
+                                    role="button"
+                                    tabIndex={0}
                                     onClick={() => setSelectedProduct(p)}
-                                    className="rounded-xl border p-4 text-left shadow-none transition-shadow hover:shadow-md"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') setSelectedProduct(p);
+                                    }}
+                                    className="relative cursor-pointer rounded-xl border p-4 text-left shadow-none transition-shadow hover:shadow-md"
                                     style={{
                                         borderColor: `${accentColor}40`,
                                         backgroundColor: `${accentColor}0d`,
                                     }}>
-                                    <div className="flex items-start gap-3">
+                                    {/* 카드 전체 클릭(상세 모달)과 별 토글이 겹치지 않게 절대 위치로 분리 */}
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleToggleFavorite(p.id);
+                                        }}
+                                        aria-label={favoriteIdSet.has(p.id) ? '즐겨찾기 해제' : '즐겨찾기에 담기'}
+                                        aria-pressed={favoriteIdSet.has(p.id)}
+                                        className={`absolute right-3 top-3 text-[16px] leading-none transition-colors ${
+                                            favoriteIdSet.has(p.id)
+                                                ? 'text-[var(--color-primary)]'
+                                                : 'text-[var(--color-ink-faint)] hover:text-[var(--color-primary)]'
+                                        }`}>
+                                        {favoriteIdSet.has(p.id) ? '★' : '☆'}
+                                    </button>
+                                    <div className="flex items-start gap-3 pr-5">
                                         {/* 더미 제품이라 실사진 없음. 파스텔 배경(imageColor) + 공용 세럼 아이콘 플레이스홀더 */}
                                         <div
                                             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg"
@@ -284,7 +342,7 @@ export default function ProductsContent({ compact = false, products }: Props) {
                                             </span>
                                         )}
                                     </div>
-                                </button>
+                                </div>
                             );
                         })}
                     </div>
@@ -341,6 +399,8 @@ export default function ProductsContent({ compact = false, products }: Props) {
             <ProductDetailModal
                 product={selectedProduct}
                 isBestValue={selectedProduct ? bestValueIds.has(selectedProduct.id) : false}
+                isFavorite={selectedProduct ? favoriteIdSet.has(selectedProduct.id) : false}
+                onToggleFavorite={selectedProduct ? () => handleToggleFavorite(selectedProduct.id) : undefined}
                 onClose={() => setSelectedProduct(null)}
             />
             <RequestProductModal
