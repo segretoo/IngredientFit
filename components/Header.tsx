@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AuthMenu from "@/components/auth/AuthMenu";
 import { useFavoritesLoginSync } from "@/lib/useFavoritesLoginSync";
+import { useSkinProfileLoginSync } from "@/lib/useSkinProfileLoginSync";
 import type { AuthUser } from "@/lib/auth/getUser";
 
 interface Props {
@@ -28,6 +29,7 @@ const LINKS = [
 
 export default function Header({ transparentOverHero = false, user = null }: Props) {
   useFavoritesLoginSync(user);
+  useSkinProfileLoginSync(user);
   const [scrolled, setScrolled] = useState(!transparentOverHero);
   const [menuOpen, setMenuOpen] = useState(false);
 

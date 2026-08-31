@@ -11,7 +11,7 @@ export default async function SkinProfilePage() {
       <Header user={user} />
       <section className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">
         <div className="mx-auto max-w-md">
-          <SkinProfileContent />
+          <SkinProfileContent user={user} />
         </div>
       </section>
       <Footer />

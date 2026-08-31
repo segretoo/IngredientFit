@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLocalStorage } from "@/lib/useLocalStorage";
+import { saveSkinProfileToAccount } from "@/app/actions/skinProfile";
+import type { AuthUser } from "@/lib/auth/getUser";
 import {
   SKIN_QUESTIONS,
   resolveSkinProfile,
@@ -13,7 +15,13 @@ import {
 // 프로필 없으면 null. ChatWindow랑 같은 키 써서 저장하면 바로 반영됨
 const initialSkinProfile: SkinProfile | null = null;
 
-export default function SkinProfileContent() {
+interface Props {
+  // 서버 컴포넌트 페이지에서 lib/auth/getUser로 읽어서 내려줌.
+  // 로그인 상태면 저장 시 계정(Supabase)에도 반영함
+  user?: AuthUser | null;
+}
+
+export default function SkinProfileContent({ user = null }: Props) {
   const [profile, setProfile, hydrated] = useLocalStorage<SkinProfile | null>(
     "ingredientfit:skinProfile",
     initialSkinProfile,
@@ -33,7 +41,16 @@ export default function SkinProfileContent() {
   }
 
   function saveProfile() {
-    if (result) setProfile(result);
+    if (!result) return;
+    setProfile(result);
+
+    // 로컬 저장은 항상(비로그인 사용자도 채팅에서 성분 순서 조정에 씀). 로그인 상태면
+    // 계정에도 반영 — 실패해도 로컬엔 이미 반영됐으니 화면은 안 막힘
+    if (user) {
+      saveSkinProfileToAccount(result).catch((err) =>
+        console.error("[skinProfile] 계정 저장 실패:", err),
+      );
+    }
   }
 
   function resetProfile() {
@@ -134,7 +151,12 @@ export default function SkinProfileContent() {
         <ul className="mt-2 space-y-1.5 text-[11.5px] leading-relaxed text-amber-900">
           <li>• 자가 응답 기반 간이 진단이라 참고용으로만 활용해주세요.</li>
           <li>• 의료적 진단이나 처방을 대체하지 않아요. 피부 트러블이 지속되면 피부과 상담을 받아보세요.</li>
-          <li>• 진단 결과는 이 기기 브라우저에만 저장돼요. 기기를 바꾸면 다시 진단이 필요해요.</li>
+          <li>
+            •{" "}
+            {user
+              ? "진단 결과는 계정에 저장돼서 다른 기기에서 로그인해도 이어서 볼 수 있어요."
+              : "진단 결과는 이 기기 브라우저에만 저장돼요. 로그인하면 계정에 저장해서 다른 기기에서도 볼 수 있어요."}
+          </li>
         </ul>
       </div>
     </div>
