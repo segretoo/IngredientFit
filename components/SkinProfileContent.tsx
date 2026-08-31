@@ -15,6 +15,10 @@ import {
 // 프로필 없으면 null. ChatWindow랑 같은 키 써서 저장하면 바로 반영됨
 const initialSkinProfile: SkinProfile | null = null;
 
+// 답변 선택 → 바로 다음 문항으로 넘어가는 텀. 너무 빠르면 선택한 게 뭔지
+// 인지도 못 하고 넘어가버리고, 너무 느리면 버벅이는 느낌이라 이 정도가 적당
+const ADVANCE_DELAY_MS = 320;
+
 interface Props {
   // 서버 컴포넌트 페이지에서 lib/auth/getUser로 읽어서 내려줌.
   // 로그인 상태면 저장 시 계정(Supabase)에도 반영함
@@ -28,16 +32,28 @@ export default function SkinProfileContent({ user = null }: Props) {
   );
   // 각 문항에서 고른 옵션 인덱스. -1은 아직 안 고름
   const [answers, setAnswers] = useState<number[]>(() => SKIN_QUESTIONS.map(() => -1));
+  // 지금 보여줄 문항 인덱스. SKIN_QUESTIONS.length에 도달하면 결과 화면
+  const [step, setStep] = useState(0);
 
   const allAnswered = answers.every((a) => a >= 0);
   const result = allAnswered ? resolveSkinProfile(answers) : null;
+  const showResult = step >= SKIN_QUESTIONS.length && result;
 
+  // 선택하는 즉시 화면이 바뀌는 게 이번 리메이크의 핵심 요구사항 —
+  // "다음" 버튼 누르는 문제집 방식 대신 선택=진행으로 처리
   function selectOption(qIdx: number, optIdx: number) {
     setAnswers((prev) => {
       const next = [...prev];
       next[qIdx] = optIdx;
       return next;
     });
+    window.setTimeout(() => {
+      setStep((s) => Math.max(s, qIdx + 1));
+    }, ADVANCE_DELAY_MS);
+  }
+
+  function goBack() {
+    setStep((s) => Math.max(0, s - 1));
   }
 
   function saveProfile() {
@@ -56,6 +72,7 @@ export default function SkinProfileContent({ user = null }: Props) {
   function resetProfile() {
     setProfile(null);
     setAnswers(SKIN_QUESTIONS.map(() => -1));
+    setStep(0);
   }
 
   // 저장된 프로필이 이미 있으면 결과 화면부터 보여줌
@@ -74,10 +91,10 @@ export default function SkinProfileContent({ user = null }: Props) {
 
       {savedLabel ? (
         // 이미 저장된 프로필 있을 때
-        <div className="mt-7 rounded-2xl border border-[var(--color-border)] bg-white p-5 text-center">
+        <div className="mt-7 rounded-2xl border border-[var(--color-border)] bg-white p-6 text-center">
           <p className="text-[12px] text-[var(--color-ink-faint)]">저장된 내 피부타입</p>
-          <p className="mt-1 text-[24px] font-bold text-[var(--color-primary)]">{savedLabel}</p>
-          <div className="mt-5 flex flex-col gap-2">
+          <p className="mt-1.5 text-[28px] font-bold text-[var(--color-primary)]">{savedLabel}</p>
+          <div className="mt-6 flex flex-col gap-2">
             <Link
               href="/chat"
               className="rounded-xl bg-[var(--color-primary)] py-3 text-[13px] font-medium text-white hover:bg-[var(--color-primary-hover)] transition-colors">
@@ -91,59 +108,89 @@ export default function SkinProfileContent({ user = null }: Props) {
             </button>
           </div>
         </div>
-      ) : (
-        <>
-          <div className="mt-7 space-y-5">
-            {SKIN_QUESTIONS.map((q, qIdx) => (
-              <div key={q.id} className="rounded-xl border border-[var(--color-border)] p-4">
-                <p className="text-[13px] font-semibold text-[var(--color-ink)]">
-                  <span className="text-[var(--color-primary)]">Q{qIdx + 1}.</span> {q.question}
-                </p>
-                <div className="mt-3 space-y-2">
-                  {q.options.map((opt, optIdx) => {
-                    const selected = answers[qIdx] === optIdx;
-                    return (
-                      <button
-                        key={opt.label}
-                        type="button"
-                        onClick={() => selectOption(qIdx, optIdx)}
-                        className={`w-full rounded-lg border px-3.5 py-2.5 text-left text-[12.5px] transition-colors ${
-                          selected
-                            ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary)] font-medium"
-                            : "border-[var(--color-border)] text-[var(--color-ink-soft)] hover:border-[var(--color-primary)]"
-                        }`}>
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+      ) : !showResult ? (
+        // 문항 하나씩 — 선택하면 바로 다음으로 넘어감
+        <div key={step} className="mt-8 animate-fade-up">
+          {/* 진행 표시: 지난 문항은 짧은 점, 현재 문항은 긴 바, 남은 문항은 옅은 점 */}
+          <div className="flex items-center justify-center gap-1.5">
+            {SKIN_QUESTIONS.map((_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === step
+                    ? "w-7 bg-[var(--color-primary)]"
+                    : i < step
+                      ? "w-1.5 bg-[var(--color-primary)]"
+                      : "w-1.5 bg-[var(--color-border)]"
+                }`}
+              />
             ))}
           </div>
 
-          {result && (
-            <div className="mt-6 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary-soft)] p-5 text-center animate-fade-up">
-              <p className="text-[12px] text-[var(--color-ink-soft)]">진단 결과</p>
-              <p className="mt-1 text-[22px] font-bold text-[var(--color-primary)]">
-                {skinTypeLabel(result)}
-              </p>
-              <div className="mt-4 flex flex-col gap-2">
-                <Link
-                  href="/chat"
-                  onClick={saveProfile}
-                  className="rounded-xl bg-[var(--color-primary)] py-3 text-[13px] font-medium text-white hover:bg-[var(--color-primary-hover)] transition-colors">
-                  이 타입 저장하고 추천받기
-                </Link>
+          <p className="mt-6 text-center text-[11.5px] font-medium text-[var(--color-ink-faint)]">
+            Q{step + 1} / {SKIN_QUESTIONS.length}
+          </p>
+          <h2 className="mt-2 text-center text-[18px] font-bold leading-snug text-[var(--color-ink)]">
+            {SKIN_QUESTIONS[step].question}
+          </h2>
+
+          <div className="mt-6 space-y-2.5">
+            {SKIN_QUESTIONS[step].options.map((opt, optIdx) => {
+              const selected = answers[step] === optIdx;
+              return (
                 <button
+                  key={opt.label}
                   type="button"
-                  onClick={saveProfile}
-                  className="rounded-xl border border-[var(--color-border)] bg-white py-3 text-[12.5px] font-medium text-[var(--color-ink-soft)] hover:bg-gray-50 transition-colors">
-                  저장만 하기
+                  onClick={() => selectOption(step, optIdx)}
+                  className={`w-full rounded-xl border-[1.5px] px-4 py-3.5 text-left text-[13.5px] font-medium transition-all active:scale-[0.98] ${
+                    selected
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
+                      : "border-[var(--color-border)] text-[var(--color-ink-soft)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]/40"
+                  }`}>
+                  {opt.label}
                 </button>
-              </div>
-            </div>
+              );
+            })}
+          </div>
+
+          {step > 0 && (
+            <button
+              type="button"
+              onClick={goBack}
+              className="mt-5 text-[12px] text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] transition-colors">
+              ← 이전 질문
+            </button>
           )}
-        </>
+        </div>
+      ) : (
+        result && (
+          <div className="mt-8 animate-fade-up rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary-soft)] p-6 text-center">
+            <p className="text-[12px] text-[var(--color-ink-soft)]">진단 결과</p>
+            <p className="mt-1.5 animate-bounce-once text-[26px] font-bold text-[var(--color-primary)]">
+              {skinTypeLabel(result)}
+            </p>
+            <div className="mt-6 flex flex-col gap-2">
+              <Link
+                href="/chat"
+                onClick={saveProfile}
+                className="rounded-xl bg-[var(--color-primary)] py-3 text-[13px] font-medium text-white hover:bg-[var(--color-primary-hover)] transition-colors">
+                이 타입 저장하고 추천받기
+              </Link>
+              <button
+                type="button"
+                onClick={saveProfile}
+                className="rounded-xl border border-[var(--color-border)] bg-white py-3 text-[12.5px] font-medium text-[var(--color-ink-soft)] hover:bg-gray-50 transition-colors">
+                저장만 하기
+              </button>
+              <button
+                type="button"
+                onClick={resetProfile}
+                className="text-[12px] text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] transition-colors">
+                다시 진단하기
+              </button>
+            </div>
+          </div>
+        )
       )}
 
       <div className="mt-7 rounded-xl border border-amber-200 bg-amber-50 p-4">
