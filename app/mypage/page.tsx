@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/getUser";
 import { getFavorites } from "@/lib/favorites";
 import { getRecommendationHistory } from "@/lib/recommendationHistory";
+import { getSkinProfileFromAccount } from "@/lib/skinProfileDb";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MyPageProfileCard from "./MyPageProfileCard";
@@ -21,9 +22,10 @@ export default async function MyPage() {
     redirect("/login?redirect=/mypage");
   }
 
-  const [favorites, recommendationHistory] = await Promise.all([
+  const [favorites, recommendationHistory, skinProfile] = await Promise.all([
     getFavorites(),
     getRecommendationHistory(),
+    getSkinProfileFromAccount(),
   ]);
 
   return (
@@ -36,7 +38,7 @@ export default async function MyPage() {
           {/* 프로필 + 피부 타입: 둘 다 "내 정보" 성격이라 나란히 배치 */}
           <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
             <MyPageProfileCard user={user} />
-            <MyPageSkinProfile />
+            <MyPageSkinProfile skinProfile={skinProfile} />
           </div>
 
           <MyPageFavorites favorites={favorites} />

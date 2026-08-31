@@ -1,9 +1,12 @@
 import SkinProfileContent from "@/components/SkinProfileContent";
+import { getUser } from "@/lib/auth/getUser";
 
-export default function MobileSkinProfilePage() {
+export default async function MobileSkinProfilePage() {
+  const user = await getUser();
+
   return (
     <main className="px-5 py-8">
-      <SkinProfileContent />
+      <SkinProfileContent user={user} />
     </main>
   );
 }

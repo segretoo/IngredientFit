@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { useLocalStorage } from "@/lib/useLocalStorage";
+import type { FavoriteItem } from "@/types";
+import type { SkinProfile } from "@/lib/skinProfile";
 import type { AuthUser } from "@/lib/auth/getUser";
 
 interface Props {
@@ -44,6 +47,16 @@ export default function AuthMenu({ user, floating = false, variant = "icon" }: P
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
+  // 로그아웃 시 계정 연동 로컬 데이터를 같이 지우기 위해 훅으로 setter만 확보.
+  // AuthMenu 자체는 이 값들을 화면에 표시 안 함 — 지우는 용도로만 씀.
+  // 이 즉시 클리어는 "빠른 UX"용 보조 수단이고, 진짜 안전망은
+  // lib/localOwnership.ts 기반 소유권 검증(페이지 들어올 때마다 스스로 확인)임 —
+  // 로그아웃 버튼을 안 누르고 그냥 브라우저를 닫아도 다음 방문 때 알아서 정리됨
+  const [, setSkinProfile] = useLocalStorage<SkinProfile | null>("ingredientfit:skinProfile", null);
+  const [, setFavoriteItems] = useLocalStorage<FavoriteItem[]>("ingredientfit:favorites", []);
+  const [, setSkinProfileOwner] = useLocalStorage<string | null>("ingredientfit:skinProfileOwner", null);
+  const [, setFavoritesOwner] = useLocalStorage<string | null>("ingredientfit:favoritesOwner", null);
+
   // 드롭다운 바깥 클릭하면 닫힘 (variant="icon"일 때만 필요)
   useEffect(() => {
     if (variant !== "icon" || !open) return;
@@ -60,6 +73,24 @@ export default function AuthMenu({ user, floating = false, variant = "icon" }: P
     const supabase = getSupabaseClient();
     if (!supabase) return;
     await supabase.auth.signOut();
+
+    // 로그아웃해도 로컬(브라우저)에 값이 남아있으면, 같은 기기에서 "다른 계정"으로
+    // 로그인했을 때 이전 사용자의 피부타입/즐겨찾기가 새 계정으로 그대로
+    // 동기화돼버리는 사고가 생김(useSkinProfileLoginSync, useFavoritesLoginSync가
+    // "로컬에 값 있으면 계정에 반영"하는 로직이라). 그래서 로그아웃 시점에 반드시 비움.
+    // 훅의 setter를 통해 지워야 emit()이 같이 발생해서, 지금 화면에 떠있는
+    // ChatWindow/SkinProfileContent 등에도 즉시 반영됨 (localStorage 직접 조작하면 안 됨)
+    setSkinProfile(null);
+    setFavoriteItems([]);
+    setSkinProfileOwner(null);
+    setFavoritesOwner(null);
+    try {
+      window.sessionStorage.removeItem("ingredientfit:skinProfileSyncedFor");
+      window.sessionStorage.removeItem("ingredientfit:favoritesSyncedFor");
+    } catch {
+      // 무시
+    }
+
     setOpen(false);
     router.refresh(); // 서버 컴포넌트들이 로그아웃된 최신 세션을 다시 읽도록
   };
