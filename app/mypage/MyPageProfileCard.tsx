@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import PasswordChangeModal from "@/components/mypage/PasswordChangeModal";
+import DeleteAccountModal from "@/components/mypage/DeleteAccountModal";
 import MyPageSectionCard from "@/components/mypage/MyPageSectionCard";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { AuthUser } from "@/lib/auth/getUser";
@@ -20,6 +21,7 @@ export default function MyPageProfileCard({ user }: Props) {
   const [nickname, setNickname] = useState(user.nickname ?? "");
   const [saving, setSaving] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const displayName = user.nickname ?? user.email?.split("@")[0] ?? "회원";
   const initial = displayName[0]?.toUpperCase() ?? "회";
@@ -109,9 +111,10 @@ export default function MyPageProfileCard({ user }: Props) {
       )}
 
       {/* 눈에 띄면 안 되지만 찾을 수는 있어야 하는 액션이라, 프로필 카드
-          맨 아래에 작고 연한 텍스트 링크로만 배치. 실제 탈퇴 로직은 다음 단계에서 연결 */}
+          맨 아래에 작고 연한 텍스트 링크로만 배치 */}
       <button
         type="button"
+        onClick={() => setShowDeleteModal(true)}
         className="mt-3 block text-[11px] text-[var(--color-ink-faint)] underline underline-offset-2 transition-colors hover:text-[var(--color-ink-soft)]"
       >
         회원 탈퇴
@@ -124,6 +127,7 @@ export default function MyPageProfileCard({ user }: Props) {
           onClose={() => setShowPasswordModal(false)}
         />
       )}
+      <DeleteAccountModal open={showDeleteModal} onClose={() => setShowDeleteModal(false)} />
     </MyPageSectionCard>
   );
 }
