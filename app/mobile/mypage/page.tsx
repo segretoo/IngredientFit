@@ -4,16 +4,14 @@ import { getUser } from "@/lib/auth/getUser";
 import { getFavorites } from "@/lib/favorites";
 import { getRecommendationHistory } from "@/lib/recommendationHistory";
 import { getSkinProfileFromAccount } from "@/lib/skinProfileDb";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import MyPageBody from "./MyPageBody";
+import MyPageBody from "@/app/mypage/MyPageBody";
 
 export const metadata: Metadata = {
   title: "마이페이지 | 성분핏",
 };
 
-// 로그인 필수 페이지. 비로그인 상태로 들어오면 로그인 후 여기로 돌아오도록 유도
-export default async function MyPage() {
+// 데스크톱 app/mypage/page.tsx와 동일 로직, Header/Footer만 없음
+export default async function MobileMyPage() {
   const user = await getUser();
   if (!user) {
     redirect("/login?redirect=/mypage");
@@ -26,17 +24,13 @@ export default async function MyPage() {
   ]);
 
   return (
-    <main className="flex min-h-screen flex-col bg-white">
-      <Header user={user} />
-      <section className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">
-        <MyPageBody
-          user={user}
-          favorites={favorites}
-          recommendationHistory={recommendationHistory}
-          skinProfile={skinProfile}
-        />
-      </section>
-      <Footer />
-    </main>
+    <div className="px-5 py-8">
+      <MyPageBody
+        user={user}
+        favorites={favorites}
+        recommendationHistory={recommendationHistory}
+        skinProfile={skinProfile}
+      />
+    </div>
   );
 }
