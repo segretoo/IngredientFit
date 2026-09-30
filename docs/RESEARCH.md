@@ -10,24 +10,24 @@
 
 ## 참고 논문
 
-| 약칭 | 논문 |
-|---|---|
-| **Gao 2021** | Advances and Challenges in Conversational Recommender Systems: A Survey (Gao et al., 2021) |
-| **Lin 2023** | How Can Recommender Systems Benefit from Large Language Models: A Survey (Lin et al., 2023) |
+| 약칭           | 논문                                                                                                                                                         |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Gao 2021**   | Advances and Challenges in Conversational Recommender Systems: A Survey (Gao et al., 2021)                                                                   |
+| **Lin 2023**   | How Can Recommender Systems Benefit from Large Language Models: A Survey (Lin et al., 2023)                                                                  |
 | **CPDat 2018** | The Chemical and Products Database (CPDat), a resource for exposure-relevant data on chemicals in consumer products (Dionisio et al., Scientific Data, 2018) |
 
 ## 설계 결정 ↔ 논문 매핑
 
-| 성분핏 기능 | 근거 논문 | 개념 |
-|---|---|---|
-| 피부타입 설문(4문항) | Gao 2021 §2 | **Question-based Preference Elicitation** — item이 아니라 attribute/user profile을 물어 선호를 명시적으로 끌어냄 |
-| 프로필로 신규 사용자 대응 | Gao 2021 §1 | **Cold-start** — 이력 없는 사용자도 프로필로 즉시 개인화 |
-| 프로필을 추천 피처로 주입 | Lin 2023 §3.1.1 | **User-level Feature Augmentation** (KAR/CUP) — 구조화된 사용자 지식을 추천 피처로 |
-| 대화형 4단계 추천 | Gao 2021 §1 · Lin 2023 §3.4 | **Multi-turn CRS / User Interaction** — 여러 턴에 걸쳐 선호를 좁혀감 |
-| 👍/👎 피드백 루프(설계) | Gao 2021 §1, §4 | **Interactive Rec / Exploitation-Exploration** — 각 추천 뒤 feedback signal로 다음 추천 조정 |
-| refPosition 배치 점수 | **CPDat 2018** | 퍼스널케어 제품은 법적으로 **함량 내림차순 기재 의무** → 기재 순서로 함량(weight fraction) 예측 가능 |
-| 데이터 확보(공공 DB) | **CPDat 2018** | EPA CompTox의 성분·함량·기능적 용도 **공개 DB** — 크롤링 없이 합법 확보 |
-| AI는 계산 안 하고 분류·설명만 | Lin 2023 §3 | LLM을 Feature Engineering(분류)·설명 생성에만 써서 **환각 회피** |
+| 성분핏 기능                   | 근거 논문                   | 개념                                                                                                             |
+| ----------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 피부타입 설문(4문항)          | Gao 2021 §2                 | **Question-based Preference Elicitation** — item이 아니라 attribute/user profile을 물어 선호를 명시적으로 끌어냄 |
+| 프로필로 신규 사용자 대응     | Gao 2021 §1                 | **Cold-start** — 이력 없는 사용자도 프로필로 즉시 개인화                                                         |
+| 프로필을 추천 피처로 주입     | Lin 2023 §3.1.1             | **User-level Feature Augmentation** (KAR/CUP) — 구조화된 사용자 지식을 추천 피처로                               |
+| 대화형 4단계 추천             | Gao 2021 §1 · Lin 2023 §3.4 | **Multi-turn CRS / User Interaction** — 여러 턴에 걸쳐 선호를 좁혀감                                             |
+| 👍/👎 피드백 루프(설계)       | Gao 2021 §1, §4             | **Interactive Rec / Exploitation-Exploration** — 각 추천 뒤 feedback signal로 다음 추천 조정                     |
+| refPosition 배치 점수         | **CPDat 2018**              | 퍼스널케어 제품은 법적으로 **함량 내림차순 기재 의무** → 기재 순서로 함량(weight fraction) 예측 가능             |
+| 데이터 확보(공공 DB)          | **CPDat 2018**              | EPA CompTox의 성분·함량·기능적 용도 **공개 DB** — 크롤링 없이 합법 확보                                          |
+| AI는 계산 안 하고 분류·설명만 | Lin 2023 §3                 | LLM을 Feature Engineering(분류)·설명 생성에만 써서 **환각 회피**                                                 |
 
 ## 핵심 논지 3가지
 
@@ -50,6 +50,7 @@ feedback signal이 따라온다"고 설명하고, §4에서 **탐색-활용 트�
 핵심 과제로 든다. 성분핏의 "이 추천 만족했나요? 👍/👎"가 이 feedback signal이다.
 
 단계적 설계(정직하게):
+
 1. **수집** — 결과 카드에서 👍/👎를 localStorage `ingredientfit:feedback`에 누적.
    로그인 붙으면 `recommendation_feedback` 테이블(`lib/supabase/schema.sql`)로 이관.
 2. **개인별 재순위** — 이 사용자가 👎한 `(성분, 제품)`은 다음 추천에서 하향.
@@ -74,6 +75,6 @@ feedback signal이 따라온다"고 설명하고, §4에서 **탐색-활용 트�
 DB**라, 크롤링 없이 합법적으로 데이터를 확보할 수 있는 출처다(→ README 데이터 확보
 전략의 학술적 보강).
 
-> 관련: `docs/FEEDBACK.md`(교수님 피드백 반영 기록)의 "전성분 기재 순서의 법적 한계와
-> 보정 장치" 항목과 이어진다. 1% 이하 성분은 순서 무관 기재가 가능하다는 한계는
-> refPosition(성분별 기준위치)으로 보정한다.
+> 관련: README의 "전성분 기재 순서의 법적 한계와 보정 장치" 항목과 이어진다.
+> 1% 이하 성분은 순서 무관 기재가 가능하다는 한계는 refPosition(성분별 기준위치)으로
+> 보정한다.
